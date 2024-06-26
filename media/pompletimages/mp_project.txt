@@ -1,0 +1,135 @@
+N/W Transportation:
+
+def northwest_corner(costs, supply, demand):
+    """
+    Solves the transportation problem using the Northwest Corner Method.
+
+    Parameters:
+    costs (list of list of int or float): The cost of transporting one unit from each supply location to each demand location.
+    supply (list of int or float): The amount of supply available at each supply location.
+    demand (list of int or float): The amount of demand required at each demand location.
+
+    Returns:
+    (list of list of int or float, int or float): The optimal transportation plan and the total cost.
+    """
+
+    # Initialize the transportation plan with zeros
+    plan = [[0 for j in range(len(demand))] for i in range(len(supply))]
+
+    # Initialize the indices for the northwest corner
+    i = 0
+    j = 0
+
+    # Solve the problem by iteratively filling in the cells of the transportation plan
+    while i < len(supply) and j < len(demand):
+        # Find the maximum amount that can be transported from the current supply location to the current demand location
+        amount = min(supply[i], demand[j])
+
+        # Update the transportation plan and the supply and demand vectors
+        plan[i][j] = amount
+        supply[i] -= amount
+        demand[j] -= amount
+
+        # Move to the next supply or demand location if one of them has been depleted
+        if supply[i] == 0:
+            i += 1
+        if demand[j] == 0:
+            j += 1
+
+    # Calculate the total cost of the transportation plan
+    cost = sum([sum([plan[i][j] * costs[i][j] for j in range(len(demand))]) for i in range(len(supply))])
+
+    return plan, cost
+
+costs = [[2, 3, 1], [5, 4, 8], [5, 6, 8]]
+supply = [20, 30, 10]
+demand = [25, 15, 20]
+plan, cost = northwest_corner(costs, supply, demand)
+print(plan)
+print(cost)
+
+
+output:
+[[20, 0, 0], [5, 15, 10], [0, 0, 10]]
+285
+> 
+
+
+PSO:
+import random
+import numpy as np
+
+class Particle:
+    def __init__(self, x0):
+        self.position = x0
+        self.velocity = np.zeros_like(x0)
+        self.best_position = x0
+        self.best_fitness = float('inf')
+
+    def update_position(self):
+        self.position += self.velocity
+
+    def update_velocity(self, w, c1, c2, global_best_position):
+        r1 = np.random.rand(len(self.position))
+        r2 = np.random.rand(len(self.position))
+        cognitive = c1 * r1 * (self.best_position - self.position)
+        social = c2 * r2 * (global_best_position - self.position)
+        self.velocity = w * self.velocity + cognitive + social
+
+class PSO:
+    def __init__(self, fitness_function, num_particles, dim, max_iter, lb, ub, w=0.5, c1=2, c2=2):
+        self.fitness_function = fitness_function
+        self.num_particles = num_particles
+        self.dim = dim
+        self.max_iter = max_iter
+        self.lb = lb
+        self.ub = ub
+        self.w = w
+        self.c1 = c1
+        self.c2 = c2
+        self.global_best_position = None
+        self.global_best_fitness = float('inf')
+        self.particles = []
+        for i in range(num_particles):
+            x0 = np.random.uniform(lb, ub, dim)
+            particle = Particle(x0)
+            self.particles.append(particle)
+
+    def optimize(self):
+        for i in range(self.max_iter):
+            for particle in self.particles:
+                fitness = self.fitness_function(particle.position)
+                if fitness < particle.best_fitness:
+                    particle.best_position = particle.position
+                    particle.best_fitness = fitness
+                if fitness < self.global_best_fitness:
+                    self.global_best_position = particle.position
+                    self.global_best_fitness = fitness
+            for particle in self.particles:
+                particle.update_velocity(self.w, self.c1, self.c2, self.global_best_position)
+                particle.update_position()
+                particle.position = np.clip(particle.position, self.lb, self.ub)
+
+        return self.global_best_position, self.global_best_fitness
+
+def rastrigin(x):
+    A = 10
+    n = len(x)
+    return A * n + np.sum(x**2 - A * np.cos(2 * np.pi * x))
+
+num_particles = 50
+dim = 5
+max_iter = 100
+lb = -5.12
+ub = 5.12
+
+pso = PSO(fitness_function=rastrigin, num_particles=num_particles, dim=dim, max_iter=max_iter, lb=lb, ub=ub)
+best_position, best_fitness = pso.optimize()
+
+print('Best position:', best_position)
+print('Best fitness:', best_fitness)
+
+output:
+Best position: [-3.21181957  2.6211458  -0.67621143  0.47213275 -2.88131175]
+Best fitness: 27.238336897014484
+> 
