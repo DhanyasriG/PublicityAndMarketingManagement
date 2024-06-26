@@ -67,10 +67,10 @@ def checklogin(request):
         print(emp)
         request.session["eid"] = emp.id
         request.session["ename"] = emp.fullname
-        return render(request, "index.html", {"eid": emp.id, "ename": emp.fullname})
+        return render(request, "login.html", {"eid": emp.id, "ename": emp.fullname})
     else:
         msg = "Login Failed"
-        return render(request, "login.html", {"msg": msg})
+        return render(request, "index.html", {"msg": msg})
 
 def horror(request):
     form = HorrorForm()
